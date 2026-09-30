@@ -1,11 +1,13 @@
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import * as React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { IngredientFormDialog } from '@/components/ingredient-form-dialog'
 import { PageHeader } from '@/components/layout/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ComboboxOption } from '@/components/ui/combobox'
 import { SearchCombobox } from '@/components/ui/combobox'
+import { DecimalInput } from '@/components/ui/decimal-input'
 import {
   Dialog,
   DialogContent,
@@ -17,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { calculateItemCost } from '@/lib/calculations'
 import type { ItemIngredientLine } from '@/lib/types'
-import { formatMoney, uid } from '@/lib/utils'
+import { formatMoney, parseDecimal, uid } from '@/lib/utils'
 import { useData } from '@/store/data-provider'
 
 interface DraftLine {
@@ -45,11 +47,15 @@ export function ItemEditorPage() {
 
   const [name, setName] = React.useState('')
   const [producedCount, setProducedCount] = React.useState('1')
-  const [bakingTimeHours, setBakingTimeHours] = React.useState('')
-  const [prepTimeHours, setPrepTimeHours] = React.useState('')
+  const [bakingTimeMinutes, setBakingTimeMinutes] = React.useState('')
+  const [prepTimeMinutes, setPrepTimeMinutes] = React.useState('')
   const [lines, setLines] = React.useState<DraftLine[]>([])
   const [deleteOpen, setDeleteOpen] = React.useState(false)
   const initializedFor = React.useRef<string | undefined>(undefined)
+  const amountInputRefs = React.useRef<Map<string, HTMLInputElement>>(new Map())
+  const [createForLineKey, setCreateForLineKey] = React.useState<string | null>(null)
+  const [createQuery, setCreateQuery] = React.useState('')
+  const createFinalFocusRef = React.useRef<HTMLInputElement | null>(null)
 
   React.useEffect(() => {
     const key = existing?.id ?? 'new'
@@ -58,14 +64,14 @@ export function ItemEditorPage() {
     if (existing) {
       setName(existing.name)
       setProducedCount(String(existing.producedCount))
-      setBakingTimeHours(existing.bakingTimeHours ? String(existing.bakingTimeHours) : '')
-      setPrepTimeHours(existing.prepTimeHours ? String(existing.prepTimeHours) : '')
+      setBakingTimeMinutes(existing.bakingTimeMinutes ? String(existing.bakingTimeMinutes) : '')
+      setPrepTimeMinutes(existing.prepTimeMinutes ? String(existing.prepTimeMinutes) : '')
       setLines(toDraftLines(existing.ingredients))
     } else {
       setName('')
       setProducedCount('1')
-      setBakingTimeHours('')
-      setPrepTimeHours('')
+      setBakingTimeMinutes('')
+      setPrepTimeMinutes('')
       setLines([])
     }
   }, [existing])
@@ -97,24 +103,30 @@ export function ItemEditorPage() {
     setLines((prev) => prev.filter((line) => line.key !== key))
   }
 
+  function openCreateIngredient(lineKey: string, query: string) {
+    createFinalFocusRef.current = amountInputRefs.current.get(lineKey) ?? null
+    setCreateQuery(query)
+    setCreateForLineKey(lineKey)
+  }
+
   const draftItem = React.useMemo(() => {
     const parsedIngredients: ItemIngredientLine[] = lines
       .filter((line) => line.ingredientId)
       .map((line) => ({
         ingredientId: line.ingredientId!,
-        amountGrams: Number.parseFloat(line.amountGrams) || 0,
+        amountGrams: parseDecimal(line.amountGrams) || 0,
       }))
     return {
       id: existing?.id ?? 'draft',
       name: name.trim() || '(без име)',
-      producedCount: Number.parseFloat(producedCount) || 1,
+      producedCount: parseDecimal(producedCount) || 1,
       ingredients: parsedIngredients,
-      bakingTimeHours: bakingTimeHours ? Number.parseFloat(bakingTimeHours) : undefined,
-      prepTimeHours: prepTimeHours ? Number.parseFloat(prepTimeHours) : undefined,
+      bakingTimeMinutes: bakingTimeMinutes ? parseDecimal(bakingTimeMinutes) : undefined,
+      prepTimeMinutes: prepTimeMinutes ? parseDecimal(prepTimeMinutes) : undefined,
       createdAt: existing?.createdAt ?? 0,
       updatedAt: existing?.updatedAt ?? 0,
     }
-  }, [existing, name, producedCount, lines, bakingTimeHours, prepTimeHours])
+  }, [existing, name, producedCount, lines, bakingTimeMinutes, prepTimeMinutes])
 
   const cost = React.useMemo(
     () => calculateItemCost(draftItem, ingredientsById, settings),
@@ -123,17 +135,17 @@ export function ItemEditorPage() {
 
   const isValid =
     name.trim().length > 0 &&
-    Number.parseFloat(producedCount) > 0 &&
-    lines.every((line) => line.ingredientId && Number.parseFloat(line.amountGrams) > 0)
+    parseDecimal(producedCount) > 0 &&
+    lines.every((line) => line.ingredientId && parseDecimal(line.amountGrams) > 0)
 
   async function handleSave() {
     if (!isValid) return
     const payload = {
       name: name.trim(),
-      producedCount: Number.parseFloat(producedCount) || 1,
+      producedCount: parseDecimal(producedCount) || 1,
       ingredients: draftItem.ingredients,
-      bakingTimeHours: bakingTimeHours ? Number.parseFloat(bakingTimeHours) : undefined,
-      prepTimeHours: prepTimeHours ? Number.parseFloat(prepTimeHours) : undefined,
+      bakingTimeMinutes: bakingTimeMinutes ? parseDecimal(bakingTimeMinutes) : undefined,
+      prepTimeMinutes: prepTimeMinutes ? parseDecimal(prepTimeMinutes) : undefined,
     }
     if (existing) {
       await updateItem(existing.id, payload)
@@ -180,47 +192,36 @@ export function ItemEditorPage() {
               <Label htmlFor="item-name">Име на артикула</Label>
               <Input
                 id="item-name"
+                autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Напр. Шоколадови бисквитки"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="item-produced-count">Брой готови артикули от тази партида</Label>
-              <Input
+              <Label htmlFor="item-produced-count">Брой артикули от тази партида</Label>
+              <DecimalInput
                 id="item-produced-count"
-                type="number"
-                inputMode="decimal"
-                min="1"
-                step="any"
                 value={producedCount}
                 onChange={(e) => setProducedCount(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-baking-time">Печене (ч.), опц.</Label>
-                <Input
+                <Label htmlFor="item-baking-time">Печене (мин.), опц.</Label>
+                <DecimalInput
                   id="item-baking-time"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  value={bakingTimeHours}
-                  onChange={(e) => setBakingTimeHours(e.target.value)}
+                  value={bakingTimeMinutes}
+                  onChange={(e) => setBakingTimeMinutes(e.target.value)}
                   placeholder="0"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="item-prep-time">Труд (ч.), опц.</Label>
-                <Input
+                <Label htmlFor="item-prep-time">Труд (мин.), опц.</Label>
+                <DecimalInput
                   id="item-prep-time"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  value={prepTimeHours}
-                  onChange={(e) => setPrepTimeHours(e.target.value)}
+                  value={prepTimeMinutes}
+                  onChange={(e) => setPrepTimeMinutes(e.target.value)}
                   placeholder="0"
                 />
               </div>
@@ -242,18 +243,24 @@ export function ItemEditorPage() {
                   <SearchCombobox
                     options={optionsForLine(line.key)}
                     value={line.ingredientId}
-                    onChange={(value) => updateLine(line.key, { ingredientId: value })}
+                    onChange={(value) => {
+                      updateLine(line.key, { ingredientId: value })
+                      if (value) {
+                        setTimeout(() => amountInputRefs.current.get(line.key)?.focus(), 0)
+                      }
+                    }}
+                    onCreateNew={(query) => openCreateIngredient(line.key, query)}
                     placeholder="Избери съставка..."
                     emptyMessage="Няма такава съставка."
                   />
                 </div>
                 <div className="w-24">
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    placeholder="грамове"
+                  <DecimalInput
+                    ref={(el) => {
+                      if (el) amountInputRefs.current.set(line.key, el)
+                      else amountInputRefs.current.delete(line.key)
+                    }}
+                    placeholder="грамаж"
                     value={line.amountGrams}
                     onChange={(e) => updateLine(line.key, { amountGrams: e.target.value })}
                   />
@@ -268,13 +275,13 @@ export function ItemEditorPage() {
                 </Button>
               </div>
             ))}
-            <Button variant="outline" onClick={addLine} disabled={ingredientOptions.length === 0}>
+            <Button variant="outline" onClick={addLine}>
               <Plus className="size-4" />
               Добави съставка
             </Button>
             {ingredients.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                Нямате въведени съставки. Добавете такива от раздел "Съставки".
+                Нямате въведени съставки — въведете име в полето по-горе, за да създадете нова.
               </p>
             )}
           </CardContent>
@@ -312,6 +319,19 @@ export function ItemEditorPage() {
           Запази
         </Button>
       </div>
+
+      <IngredientFormDialog
+        open={createForLineKey !== null}
+        onOpenChange={(open) => !open && setCreateForLineKey(null)}
+        initialName={createQuery}
+        finalFocus={createFinalFocusRef}
+        onSaved={(ingredient) => {
+          if (createForLineKey) {
+            updateLine(createForLineKey, { ingredientId: ingredient.id })
+          }
+          setCreateForLineKey(null)
+        }}
+      />
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>

@@ -19,11 +19,11 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-start">{left}</div>
+      <div className="flex h-11 w-11 shrink-0 items-center justify-start">{left}</div>
       <h1 className="flex flex-1 items-center truncate text-lg font-semibold leading-none">
         {title}
       </h1>
-      <div className="flex h-9 shrink-0 items-center justify-end gap-1">{right}</div>
+      <div className="flex h-11 shrink-0 items-center justify-end gap-1">{right}</div>
     </header>
   )
 }

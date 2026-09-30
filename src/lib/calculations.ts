@@ -49,9 +49,9 @@ export function calculateItemCost(
   })
 
   const ingredientsCost = lines.reduce((sum, line) => sum + line.cost, 0)
-  const laborCost = (item.prepTimeHours ?? 0) * settings.laborRatePerHour
+  const laborCost = ((item.prepTimeMinutes ?? 0) / 60) * settings.laborRatePerHour
   const electricityCost =
-    (item.bakingTimeHours ?? 0) * settings.ovenPowerKw * settings.electricityPricePerKwh
+    ((item.bakingTimeMinutes ?? 0) / 60) * settings.ovenPowerKw * settings.electricityPricePerKwh
 
   const totalBatchCost = ingredientsCost + laborCost + electricityCost
   const producedCount = item.producedCount > 0 ? item.producedCount : 1

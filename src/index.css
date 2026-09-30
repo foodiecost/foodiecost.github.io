@@ -84,12 +84,15 @@
   }
   html {
     color-scheme: light;
+    overflow-x: hidden;
   }
   html.dark {
     color-scheme: dark;
   }
   body {
     @apply bg-page-backdrop text-foreground;
+    overflow-x: hidden;
+    width: 100%;
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;

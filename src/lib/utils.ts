@@ -13,3 +13,8 @@ export function formatMoney(value: number): string {
 export function uid(): string {
   return crypto.randomUUID()
 }
+
+/** Parses a number typed by the user, accepting both "," and "." as decimal separator. */
+export function parseDecimal(value: string): number {
+  return Number.parseFloat(value.replace(',', '.'))
+}

@@ -21,10 +21,10 @@ export interface Item {
   /** Колко готови артикула се получават от този batch */
   producedCount: number
   ingredients: ItemIngredientLine[]
-  /** Време за печене в часове (опционално) */
-  bakingTimeHours?: number
-  /** Време за приготвяне (ръчен труд) в часове (опционално) */
-  prepTimeHours?: number
+  /** Време за печене в минути (опционално) */
+  bakingTimeMinutes?: number
+  /** Време за приготвяне (ръчен труд) в минути (опционално) */
+  prepTimeMinutes?: number
   createdAt: number
   updatedAt: number
 }
@@ -34,7 +34,7 @@ export type ThemeMode = 'light' | 'dark' | 'auto'
 export interface Settings {
   id: 'settings'
   theme: ThemeMode
-  /** Цена на труда за час, в лв./евро */
+  /** Цена на труда за час в евро */
   laborRatePerHour: number
   /** Цена на тока за kWh */
   electricityPricePerKwh: number

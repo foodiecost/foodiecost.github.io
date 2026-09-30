@@ -13,7 +13,7 @@ export function SelectTrigger({
   return (
     <BaseSelect.Trigger
       className={cn(
-        'flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none select-none data-popup-open:ring-2 data-popup-open:ring-ring/30 focus-visible:ring-2 focus-visible:ring-ring/30',
+        'flex h-11 min-w-40 items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none select-none data-popup-open:ring-2 data-popup-open:ring-ring/30 focus-visible:ring-2 focus-visible:ring-ring/30',
         className,
       )}
       {...props}
@@ -67,7 +67,7 @@ export function SelectItem({
   return (
     <BaseSelect.Item
       className={cn(
-        'grid cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground',
+        'grid cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm px-2 py-2.5 text-sm outline-none select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground',
         className,
       )}
       {...props}

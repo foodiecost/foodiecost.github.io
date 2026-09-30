@@ -2,8 +2,9 @@ import * as React from 'react'
 import { PageHeader } from '@/components/layout/page-header'
 import { SettingsLinkButton } from '@/components/layout/settings-link-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { DecimalInput } from '@/components/ui/decimal-input'
 import { Label } from '@/components/ui/label'
+import { parseDecimal } from '@/lib/utils'
 import { useData } from '@/store/data-provider'
 
 export function OtherCostsPage() {
@@ -19,7 +20,7 @@ export function OtherCostsPage() {
   }, [settings])
 
   function commit(field: 'laborRatePerHour' | 'electricityPricePerKwh' | 'ovenPowerKw', value: string) {
-    const parsed = Number.parseFloat(value)
+    const parsed = parseDecimal(value)
     if (!Number.isFinite(parsed) || parsed < 0) return
     updateSettings({ ...settings, [field]: parsed })
   }
@@ -36,13 +37,9 @@ export function OtherCostsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="labor-rate">Цена на труда (лв./час)</Label>
-              <Input
+              <Label htmlFor="labor-rate">Цена на труда (евро/час)</Label>
+              <DecimalInput
                 id="labor-rate"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
                 value={labor}
                 onChange={(e) => setLabor(e.target.value)}
                 onBlur={(e) => commit('laborRatePerHour', e.target.value)}
@@ -60,13 +57,9 @@ export function OtherCostsPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="electricity-price">Цена на тока (лв./kWh)</Label>
-              <Input
+              <Label htmlFor="electricity-price">Цена на тока (евро/kWh)</Label>
+              <DecimalInput
                 id="electricity-price"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
                 value={electricity}
                 onChange={(e) => setElectricity(e.target.value)}
                 onBlur={(e) => commit('electricityPricePerKwh', e.target.value)}
@@ -74,12 +67,8 @@ export function OtherCostsPage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="oven-power">Мощност на фурна (kW)</Label>
-              <Input
+              <DecimalInput
                 id="oven-power"
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
                 value={ovenPower}
                 onChange={(e) => setOvenPower(e.target.value)}
                 onBlur={(e) => commit('ovenPowerKw', e.target.value)}
