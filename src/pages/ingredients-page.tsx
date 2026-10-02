@@ -7,6 +7,8 @@ import { IngredientFormDialog } from '@/components/ingredient-form-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { SearchInput } from '@/components/ui/search-input'
+import { useSearch } from '@/hooks/use-search'
 import { costPerGram } from '@/lib/calculations'
 import type { Ingredient } from '@/lib/types'
 import { formatMoney } from '@/lib/utils'
@@ -18,9 +20,12 @@ export function IngredientsPage() {
   const [editing, setEditing] = React.useState<Ingredient | null>(null)
   const [deleteTarget, setDeleteTarget] = React.useState<Ingredient | null>(null)
 
+  const getIngredientName = React.useCallback((ingredient: Ingredient) => ingredient.name, [])
+  const { query, setQuery, filtered } = useSearch(ingredients, getIngredientName)
+
   const sorted = React.useMemo(
-    () => [...ingredients].sort((a, b) => a.name.localeCompare(b.name, 'bg')),
-    [ingredients],
+    () => [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'bg')),
+    [filtered],
   )
 
   const itemsUsingIngredient = React.useCallback(
@@ -52,12 +57,18 @@ export function IngredientsPage() {
     <div>
       <PageHeader title="Съставки" left={<SettingsLinkButton />} />
 
-      <div className="flex flex-col gap-2 p-4">
+      <div className="p-4 pb-2">
+        <SearchInput value={query} onChange={setQuery} placeholder="Търсене на съставка..." />
+      </div>
+
+      <div className="flex flex-col gap-2 p-4 pt-2">
         {sorted.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground">
             <Wheat className="size-10 opacity-40" />
             <p className="text-sm">
-              Все още нямате въведени съставки. Натиснете "+", за да добавите първата.
+              {ingredients.length === 0
+                ? 'Все още нямате въведени съставки. Натиснете "+", за да добавите първата.'
+                : 'Няма намерени съставки.'}
             </p>
           </div>
         )}

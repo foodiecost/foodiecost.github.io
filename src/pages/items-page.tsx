@@ -1,40 +1,35 @@
-import { ChefHat, Search } from 'lucide-react'
+import { ChefHat } from 'lucide-react'
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FloatingActionButton } from '@/components/layout/floating-action-button'
 import { PageHeader } from '@/components/layout/page-header'
 import { SettingsLinkButton } from '@/components/layout/settings-link-button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { SearchInput } from '@/components/ui/search-input'
+import { useSearch } from '@/hooks/use-search'
 import { calculateItemCost } from '@/lib/calculations'
+import type { Item } from '@/lib/types'
 import { formatMoney } from '@/lib/utils'
 import { useData } from '@/store/data-provider'
 
 export function ItemsPage() {
   const { items, ingredientsById, settings, loading } = useData()
   const navigate = useNavigate()
-  const [query, setQuery] = React.useState('')
 
-  const filtered = React.useMemo(() => {
-    const q = query.trim().toLocaleLowerCase('bg')
-    const list = q ? items.filter((item) => item.name.toLocaleLowerCase('bg').includes(q)) : items
-    return [...list].sort((a, b) => b.updatedAt - a.updatedAt)
-  }, [items, query])
+  const getItemName = React.useCallback((item: Item) => item.name, [])
+  const { query, setQuery, filtered: matched } = useSearch(items, getItemName)
+
+  const filtered = React.useMemo(
+    () => [...matched].sort((a, b) => b.updatedAt - a.updatedAt),
+    [matched],
+  )
 
   return (
     <div>
       <PageHeader title="Артикули" left={<SettingsLinkButton />} />
 
       <div className="p-4 pb-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Търсене на артикул..."
-            className="pl-9"
-          />
-        </div>
+        <SearchInput value={query} onChange={setQuery} placeholder="Търсене на артикул..." />
       </div>
 
       <div className="flex flex-col gap-2 p-4 pt-2">
